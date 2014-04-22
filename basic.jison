@@ -15,9 +15,15 @@
 "-"                   return '-';
 "+"                   return '+';
 "^"                   return '^';
+"<="                  return 'LE';
+"<"                   return 'LT';
+">="                  return 'GE';
+">"                   return 'GT';
+"<>"                  return 'NE';
+"!="                  return 'NE';
 "("                   return '(';
 ")"                   return ')';
-"\n" return "NL";
+\n return "NL";
 "=" return "EQ";
 "IF" return "IF";
 "THEN" return "THEN";
@@ -36,22 +42,16 @@
 %left '+' '-'
 %left '*' '/'
 %left '^'
+%left GT GE LT LE EQ NE
 %left UMINUS
 
 %start line
 
 %% /* language grammar */
 
-prog
-: line EOF
-{ return [$1]; }
-| line NL prog
-{ return [$1].concat($2); }
-;
-
 line
 : INTEGER statement EOF
-{ return [{ line_number: $1, f: $2}]; }
+{ return { line_number: Number($1), f: $2}; }
 ;
 
 statement
@@ -70,7 +70,14 @@ statement
             });
     console.log("PARSE: PRINT");
 }
-| IF exp THEN INTEGER
+| IF num_exp THEN INTEGER
+{
+    $$ = bind_f(function(state) {
+        if ($2(state)) {
+            state.goto($4);
+        }
+    });
+}
 | STOP
 { $$ = function(state) {
         state.running = 0;
@@ -99,6 +106,16 @@ num_exp
     { $$ = bind_f(function(state) { return $1(state) / $3(state); }); }
 | num_exp '*' num_exp
     { $$ = bind_f(function(state) { return $1(state) * $3(state); }); }
+| num_exp LE num_exp
+    { $$ = bind_f(function(state) { return $1(state) <= $3(state); }); }
+| num_exp GE num_exp
+    { $$ = bind_f(function(state) { return $1(state) >= $3(state); }); }
+| num_exp GT num_exp
+    { $$ = bind_f(function(state) { return $1(state) > $3(state); }); }
+| num_exp LT num_exp
+    { $$ = bind_f(function(state) { return $1(state) < $3(state); }); }
+| num_exp NE num_exp
+    { $$ = bind_f(function(state) { return $1(state) != $3(state); }); }
 | '(' num_exp ')'
     { $$ = $2;}
 | NUM_VARIABLE

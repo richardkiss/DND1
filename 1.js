@@ -17,8 +17,18 @@ function bind_f(f) {
 }
 
 
-function run(prog) {
-    var compiled = compile(prog);
+function step(compiled, state) {
+    var i;
+    if (compiled.length <= state.line_index) {
+        state.running = 0;
+        return;
+    }
+    statement = compiled[state.line_index];
+    state.line_index++;
+    statement.f(state);
+}
+
+function run(compiled, state) {
     var state = {
         line_index: 0,
         running: 1,
@@ -35,22 +45,7 @@ function run(prog) {
     }
 }
 
-var f = parser.parse("20 LET A = 5+10\r\n");
-
-console.log("f = " + f);
-
 //debugger;
-
-function step(compiled, state) {
-    var i;
-    if (compiled.length <= state.line_index) {
-        state.running = 0;
-        return;
-    }
-    statement = compiled[state.line_index];
-    statement.f(state);
-    state.line_index++;
-}
 
 var state = {
     line_index: 0,
@@ -62,7 +57,13 @@ var state = {
     }
 }
 
-var v = f(state);
+var compiled = parser.parse("20 LET A = 5+10\r\n");
+
+console.log("compiled=");
+console.log(compiled);
+
+
+var v = run(compiled, state);
 console.log("state=");
 console.log(state);
 

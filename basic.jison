@@ -44,12 +44,14 @@
 
 prog
 : line EOF
+{ return [$1]; }
 | line NL prog
+{ return [$1].concat($2); }
 ;
 
 line
 : INTEGER statement EOF
-{ return $2; }
+{ return [{ line_number: $1, f: $2}]; }
 ;
 
 statement

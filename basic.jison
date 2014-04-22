@@ -1,7 +1,4 @@
-/* description: Parses end executes mathematical expressions. */
-
-/*
-*/
+/* BASIC interpreter to run D&D#1 */
 
 /* lexical grammar */
 %lex

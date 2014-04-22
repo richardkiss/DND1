@@ -1,0 +1,33 @@
+LET
+PRINT
+BASE 0
+RND
+CLK
+DIM
+INT
+*, +, =
+FILE #1 = "DNG1"
+RESTORE #4
+READ #4
+WRITE #
+
+DATA "STR","DEX","CON","CHAR"
+INPUT
+IF THEN
+GOTO
+REM
+<>
+FOR / NEXT
+READ
+GOSUB
+STOP
+
+
+Data structures
+
+string & real variables
+array variables
+
+READ/DATA pointer
+GOSUB stack
+FOR/NEXT stack

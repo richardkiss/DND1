@@ -1,0 +1,22 @@
+- write a simple basic program
+  - 10 let a = 1
+  - 20 print a
+  - 30 a = a + 1
+  - 40 if a < 100 then 10
+  - 50 stop
+  - get it running
+
+STEP 1
+  - write a simple basic.jison script
+  - get state sticking
+  - 10 let a = 1
+
+STEP 2
+  - 10 let a = 1 + 2
+
+
+
+TIME USED
+---------
+
+April 20, 2014: 128 minutes

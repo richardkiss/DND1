@@ -21,12 +21,14 @@
 "!="                  return 'NE';
 "("                   return '(';
 ")"                   return ')';
+"#" return "#";
 ";" return "SEMICOLON";
 "," return ",";
 \n return "NL";
 "=" return "EQ";
 "IF" return "IF";
 "THEN" return "THEN";
+"GOTO" return "GOTO";
 "PRINT" return "PRINT";
 "STOP" return "STOP";
 "LET" return "LET";
@@ -38,6 +40,10 @@
 "GOSUB" return "GOSUB";
 "RETURN" return "RETURN";
 "READ" return "READ";
+"DATA" return "DATA";
+"FILE" return "FILE";
+"WRITE" return "WRITE";
+"RESTORE" return "RESTORE";
 "REM" return "REM";
 
 
@@ -66,7 +72,9 @@
 %% /* language grammar */
 
 line
-: INTEGER statement EOF
+: INTEGER REM
+{ return { line_number: Number($1), f: function() {}}; }
+| INTEGER statement EOF
 { return { line_number: Number($1), f: $2}; }
 ;
 
@@ -107,7 +115,12 @@ statement
         }
     });
 }
-| REM COMMENT_TEXT
+| GOTO INTEGER
+{
+    $$ = bind_f(function(state) {
+        state.goto($2);
+    });
+}
 | DIM dim_exp
 {
     $$ = function(state) {};
@@ -145,8 +158,29 @@ statement
         state.line_index = state.return_positions.pop();
     }
 }
+| DATA data_exp
+{
+    $$ = function(state) {};
+}
+| FILE "#" num_exp EQ str_exp
+{
+    $$ = function(state) {};
+}
+| WRITE "#" num_exp "," exp
+{
+    $$ = function(state) {};
+}
+| RESTORE "#" INTEGER
+{
+    $$ = function(state) {};
+}
 | READ variable
 {
+    $$ = function(state) {};
+}
+| READ "#" INTEGER "," variable
+{
+    $$ = function(state) {};
 }
 | INPUT variable
 {
@@ -169,6 +203,12 @@ statement
 }
 ;
 
+
+exp
+: num_exp
+| str_exp
+;
+
 num_exp
 : '-' num_exp
     { $$ = bind_f(function(state) { return -$1(state)}); }
@@ -180,6 +220,8 @@ num_exp
     { $$ = bind_f(function(state) { return $1(state) / $3(state); }); }
 | num_exp '*' num_exp
     { $$ = bind_f(function(state) { return $1(state) * $3(state); }); }
+| num_exp EQ num_exp
+    { $$ = bind_f(function(state) { return $1(state) == $3(state); }); }
 | num_exp LE num_exp
     { $$ = bind_f(function(state) { return $1(state) <= $3(state); }); }
 | num_exp GE num_exp
@@ -233,6 +275,21 @@ str_exp
 }
 | str_exp '+' str_exp
     { $$ = bind_f(function(state) { return $1(state) + $3(state); }); }
+;
+
+data_exp
+: STR_CONSTANT
+{
+    $$ = $1;
+}
+| NUM_CONSTANT
+{
+    $$ = $1;
+}
+| data_exp "," data_exp
+{
+    $$ = $1;
+}
 ;
 
 variable

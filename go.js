@@ -2,7 +2,7 @@ var parser = require("./basic").parser;
 var fs = require("fs");
 
 
-var source_path = "1.bas.txt";
+var source_path = "forloop.basic";
 
 var prog_text = fs.readFileSync(source_path, encoding="utf8").split("\n");
 
@@ -18,11 +18,11 @@ function bind_f(f) {
 var state = {
     line_index: 0,
     running: 1,
-    vars: {},
-    array_vars: {},
+    vars: {}, // n_A for numerical, s_A for string, na_A for numerical array, sa_A for string array
     print: function(s) {
         console.log(s);
     },
+    for_state: {},
     goto: function(line_number) {
         this.line_index = this.line_lookup[line_number];
     },

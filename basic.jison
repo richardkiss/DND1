@@ -6,8 +6,8 @@
 %%
 \"[^\"]*\"            return "STR_CONSTANT";
 \s+                   /* skip whitespace */
+[0-9]+("."[0-9]+)     return 'REAL';
 [0-9]+                return 'INTEGER';
-[0-9]+("."[0-9]*)     return 'REAL';
 "*"                   return '*';
 "/"                   return '/';
 "-"                   return '-';
@@ -79,6 +79,12 @@ statement
     console.log("LET " + $4); 
 }
 | LET STR_VARIABLE EQ str_exp
+{
+    $$ = bind_f(function(state) {
+            state.vars[$2] = $4(state);
+        });
+    console.log("LET " + $4); 
+}
 | PRINT print_exp
 {
     $$ = bind_f(function(state) {
@@ -104,6 +110,7 @@ statement
 | REM COMMENT_TEXT
 | DIM dim_exp
 {
+    $$ = function(state) {};
 }
 | FOR NUM_VARIABLE EQ num_exp TO num_exp
 {
@@ -183,8 +190,6 @@ num_exp
     { $$ = bind_f(function(state) { return $1(state) < $3(state); }); }
 | num_exp NE num_exp
     { $$ = bind_f(function(state) { return $1(state) != $3(state); }); }
-| str_exp '+' str_exp
-    { $$ = bind_f(function(state) { return $1(state) + $3(state); }); }
 | str_exp EQ str_exp
     { $$ = bind_f(function(state) { return $1(state) == $3(state); }); }
 | str_exp LE str_exp
@@ -213,17 +218,21 @@ num_exp
     { var N = Number(yytext); $$ = bind_f(function(state) { return N;}); }
 | INTEGER
     { var N = Number(yytext); $$ = bind_f(function(state) { return N;}); }
+| REAL
+    { var N = Number(yytext); $$ = bind_f(function(state) { return N;}); }
 ;
 
 str_exp
 : STR_CONSTANT
 {
-    $$ = bind_f(function(state) { return $1 });
+    $$ = bind_f(function(state) { return $1.substring(1, $1.length-1); });
 }
 | STR_VARIABLE
 {
     $$ = bind_f(function(state) { return state.vars[$1]; })
 }
+| str_exp '+' str_exp
+    { $$ = bind_f(function(state) { return $1(state) + $3(state); }); }
 ;
 
 variable

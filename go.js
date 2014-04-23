@@ -2,7 +2,7 @@ var parser = require("./basic").parser;
 var fs = require("fs");
 
 
-var source_path = "forloop.basic";
+var source_path = "simple.basic";
 
 var prog_text = fs.readFileSync(source_path, encoding="utf8").split("\n");
 

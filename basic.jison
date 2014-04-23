@@ -45,6 +45,7 @@
 "WRITE" return "WRITE";
 "RESTORE" return "RESTORE";
 "REM" return "REM";
+"ASSERT" return "ASSERT";
 
 
 "INT" return "INT";
@@ -93,19 +94,38 @@ statement
         });
     console.log("LET " + $4); 
 }
-| PRINT print_exp
+| PRINT print_exp_list
 {
     $$ = bind_f(function(state) {
-            $2(state);
-            });
-    console.log("PARSE: PRINT");
+          var idx;
+          var s = '';
+          for (idx=0;idx<$2.length;idx++) {
+              s += $2[idx];
+          }
+          s += "\n";
+          state.print(s);
+      });
 }
-| PRINT print_exp SEMICOLON
+| PRINT print_exp_list SEMICOLON
 {
     $$ = bind_f(function(state) {
-            $2(state);
-            });
-    console.log("PARSE: PRINT");
+        var idx;
+        var s = '';
+        for (idx=0;idx<$2.length;idx++) {
+            s += $2[idx];
+        }
+        state.print(s);
+      });
+}
+| ASSERT num_exp
+{
+    $$ = bind_f(function(state) {
+            if (!$2(state)) {
+                console.log("state:");
+                console.log(state);
+                throw "assertion failed";
+            }
+        });
 }
 | IF num_exp THEN INTEGER
 {
@@ -158,7 +178,7 @@ statement
         state.line_index = state.return_positions.pop();
     }
 }
-| DATA data_exp
+| DATA data_exp_list
 {
     $$ = function(state) {};
 }
@@ -174,7 +194,7 @@ statement
 {
     $$ = function(state) {};
 }
-| READ variable
+| READ var_list
 {
     $$ = function(state) {};
 }
@@ -203,6 +223,16 @@ statement
 }
 ;
 
+var_list
+: variable
+{
+    $$ = [$1];
+}
+| var_list "," variable
+{
+    $$ = $1.concat([$3])
+}
+;
 
 exp
 : num_exp
@@ -277,16 +307,23 @@ str_exp
     { $$ = bind_f(function(state) { return $1(state) + $3(state); }); }
 ;
 
+data_exp_list
+: data_exp
+{ $$ = [$1]; }
+| data_exp "," data_exp_list
+{ $$ = $1.concat([$2]); }
+;
+
 data_exp
 : STR_CONSTANT
 {
     $$ = $1;
 }
-| NUM_CONSTANT
+| INTEGER
 {
     $$ = $1;
 }
-| data_exp "," data_exp
+| REAL
 {
     $$ = $1;
 }
@@ -299,18 +336,29 @@ variable
 { $$ = "s_" + $1; }
 ;
 
+print_exp_list
+:
+{
+    $$ = [];
+}
+| print_exp
+{
+    $$ = [$1];
+}
+| print_exp_list SEMICOLON print_exp
+{
+    $$ = [$1].concat($3);
+}
+;
+
 print_exp
 : num_exp
 {
-    $$ = function(state) {
-        state.print($1(state));
-    }
+    $$ = $1;
 }
 | str_exp
 {
-    $$ = function(state) {
-        state.print($1(state));
-    }
+    $$ = $1;
 }
 ;
 

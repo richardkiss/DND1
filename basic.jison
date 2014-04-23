@@ -100,7 +100,7 @@ statement
           var idx;
           var s = '';
           for (idx=0;idx<$2.length;idx++) {
-              s += $2[idx];
+              s += $2[idx](state);
           }
           s += "\n";
           state.print(s);
@@ -112,7 +112,7 @@ statement
         var idx;
         var s = '';
         for (idx=0;idx<$2.length;idx++) {
-            s += $2[idx];
+            s += $2[idx](state);
         }
         state.print(s);
       });
@@ -143,7 +143,7 @@ statement
 }
 | DIM dim_exp
 {
-    $$ = function(state) {};
+    $$ = function(state) { $2(state); };
 }
 | FOR NUM_VARIABLE EQ num_exp TO num_exp
 {
@@ -282,6 +282,10 @@ num_exp
     { $$ = bind_f(function(state) { return rnd($3(state)); })}
 | CLK '(' num_exp ')'
     { $$ = bind_f(function(state) { return clk($3(state)); })}
+| num_array_var
+{
+    $$ = bind_f(function(state) { return state.vars[$1(state)];})
+}
 | NUM_VARIABLE
 {
     $$ = bind_f(function(state) { return state.vars[$1]; });
@@ -368,23 +372,38 @@ dim_exp
 ;
 
 dim_entry
-: NUM_VARIABLE "(" index_list ")"
+: NUM_VARIABLE "(" num_exp_list ")"
 {
     $$ = bind_f(function(state) {
-        state.array_vars[$1] = make_num_array($3);
+        dim(state, $1, $3);
         });
 }
-| STR_VARIABLE "(" index_list ")"
+| STR_VARIABLE "(" num_exp_list ")"
 {
 }
 ;
 
-index_list
-: INTEGER
+num_array_var
+: NUM_VARIABLE "(" num_exp_list ")"
+{
+    $$ = bind_f(function(state) {
+        var indices = $3.map(function(num_exp) { return int(num_exp(state)); });
+        var v = $1;
+        var idx;
+        for (idx=0;idx<indices.length;idx++) {
+            v = v + "_" + indices[idx];
+        }
+        return v;
+        });
+}
+;
+
+num_exp_list
+: num_exp
 {
     $$ = [$1];
 }
-| INTEGER "," index_list
+| num_exp "," num_exp_list
 {
     $$ = [$1].concat($3);
 }
@@ -399,8 +418,8 @@ function bind_f(f) {
     return new_f;
 }
 
-function make_num_array(index_list) {
-    console.log("make num array: " + index_list);
+function dim(state, v, index_list) {
+    console.log("dim: " + index_list);
 }
 
 function int(v) {

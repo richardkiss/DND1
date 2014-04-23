@@ -1,8 +1,11 @@
 var parser = require("./basic").parser;
+var fs = require("fs");
 
-function exec (input) {
-    return parser.parse(input);
-}
+
+var source_path = "1.bas.txt";
+
+var prog_text = fs.readFileSync(source_path, encoding="utf8").split("\n");
+
 
 function bind_f(f) {
     var new_f = function (state) {
@@ -56,7 +59,6 @@ function compile_line(line) {
     return parser.parse(line);
 }
 
-var prog_text = ["10 LET A = 1", "20 PRINT A", "30 A = A + 1", "40 IF A < 100 THEN 20", "50 STOP"];
 
 var program = prog_text.map(compile_line);
 

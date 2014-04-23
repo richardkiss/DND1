@@ -185,11 +185,11 @@ num_exp
 | '(' num_exp ')'
     { $$ = $2;}
 | INT '(' num_exp ')'
-    { $$ = bind_f(function(state) { return int($1(state)); })}
+    { $$ = bind_f(function(state) { return int($3(state)); })}
 | RND '(' num_exp ')'
-    { $$ = bind_f(function(state) { return rnd($1(state)); })}
+    { $$ = bind_f(function(state) { return rnd($3(state)); })}
 | CLK '(' num_exp ')'
-    { $$ = bind_f(function(state) { return clk($1(state)); })}
+    { $$ = bind_f(function(state) { return clk($3(state)); })}
 | NUM_VARIABLE
 {
     $$ = bind_f(function(state) { return state.vars[$1]; });

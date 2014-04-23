@@ -23,6 +23,7 @@ var state = {
         console.log(s);
     },
     for_state: {},
+    return_positions: [],
     goto: function(line_number) {
         this.line_index = this.line_lookup[line_number];
     },

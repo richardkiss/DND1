@@ -35,6 +35,8 @@
 "INPUT" return "INPUT";
 "FOR" return "FOR";
 "NEXT" return "NEXT";
+"GOSUB" return "GOSUB";
+"RETURN" return "RETURN";
 "READ" return "READ";
 "REM" return "REM";
 
@@ -113,15 +115,28 @@ statement
 | NEXT NUM_VARIABLE
 {
     $$ = bind_f(function(state) {
-            for_state = state.for_state[$2];
+            var for_state = state.for_state[$2];
             if (state.vars[$2] < for_state.m) {
                 state.vars[$2] += for_state.step;
                 state.line_index = for_state.p;
             } else {
                 // remove for_item
-                state.for_state[$2] = undefined;
+                delete state.for_state[$2];
             }
         })
+}
+| GOSUB INTEGER
+{
+    $$ = bind_f(function(state) {
+           state.return_positions.push(state.line_index);
+           state.line_index = state.line_lookup[$2];
+        })
+}
+| RETURN
+{
+    $$ = function(state) {
+        state.line_index = state.return_positions.pop();
+    }
 }
 | READ variable
 {

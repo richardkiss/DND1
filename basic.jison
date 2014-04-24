@@ -80,19 +80,11 @@ line
 ;
 
 statement
-: LET NUM_VARIABLE EQ num_exp
+: LET identifier EQ exp
 {
     $$ = bind_f(function(state) {
-            state.vars[$2] = $4(state);
+            state.vars[$2(state)] = $4(state);
         });
-    console.log("LET " + $4); 
-}
-| LET STR_VARIABLE EQ str_exp
-{
-    $$ = bind_f(function(state) {
-            state.vars[$2] = $4(state);
-        });
-    console.log("LET " + $4); 
 }
 | PRINT print_exp_list
 {
@@ -123,7 +115,7 @@ statement
             if (!$2(state)) {
                 console.log("state:");
                 console.log(state);
-                throw "assertion failed";
+                throw "assertion failed in " + state.program[state.line_index-1].line_number;
             }
         });
 }
@@ -194,15 +186,15 @@ statement
 {
     $$ = function(state) {};
 }
-| READ var_list
+| READ identifier_list
 {
     $$ = function(state) {};
 }
-| READ "#" INTEGER "," variable
+| READ "#" INTEGER "," identifier
 {
     $$ = function(state) {};
 }
-| INPUT variable
+| INPUT identifier
 {
 }
 | STOP
@@ -223,12 +215,65 @@ statement
 }
 ;
 
-var_list
-: variable
+
+identifier
+: num_identifier
+{
+    $$ = $1;
+}
+| str_identifier
+{
+    $$ = $1;
+}
+;
+
+num_identifier
+: NUM_VARIABLE
+{
+    $$ = bind_f(function(state) { return $1 });
+}
+| NUM_VARIABLE array_addendum
+{
+    $$ = bind_f(function (state) {
+        return $1 + $2(state);
+    });
+}
+;
+
+str_identifier
+: STR_VARIABLE
+{
+    $$ = bind_f(function(state) { return $1 });
+}
+| STR_VARIABLE array_addendum
+{
+    $$ = bind_f(function (state) {
+        return $1 + $2(state);
+    });
+}
+;
+
+array_addendum
+: "(" num_exp_list ")"
+{
+    $$ = bind_f(function (state) {
+        var s = '';
+        var idx;
+        for (idx=0; idx<$2.length; idx++) {
+            s += "_" + $2[idx](state);
+        }
+        return s;
+    });
+}
+;
+
+
+identifier_list
+: identifier
 {
     $$ = [$1];
 }
-| var_list "," variable
+| identifier_list "," identifier
 {
     $$ = $1.concat([$3])
 }
@@ -282,13 +327,9 @@ num_exp
     { $$ = bind_f(function(state) { return rnd($3(state)); })}
 | CLK '(' num_exp ')'
     { $$ = bind_f(function(state) { return clk($3(state)); })}
-| num_array_var
+| num_identifier
 {
-    $$ = bind_f(function(state) { return state.vars[$1(state)];})
-}
-| NUM_VARIABLE
-{
-    $$ = bind_f(function(state) { return state.vars[$1]; });
+    $$ = bind_f(function(state) { return state.vars[$1(state)]; });
 }
 | NUMBER
     { var N = Number(yytext); $$ = bind_f(function(state) { return N;}); }
@@ -333,12 +374,22 @@ data_exp
 }
 ;
 
-variable
-: NUM_VARIABLE
-{ $$ = "n_" + $1; }
-| STR_VARIABLE
-{ $$ = "s_" + $1; }
+num_array_var
+: NUM_VARIABLE "(" num_exp_list ")"
+{
+    $$ = bind_f(function(state) {
+        var indices = $3.map(function(num_exp) { return int(num_exp(state)); });
+        var v = $1;
+        var idx;
+        for (idx=0;idx<indices.length;idx++) {
+            v = v + "_" + indices[idx];
+        }
+        return v;
+    });
+}
 ;
+
+
 
 print_exp_list
 :
@@ -375,26 +426,11 @@ dim_entry
 : NUM_VARIABLE "(" num_exp_list ")"
 {
     $$ = bind_f(function(state) {
-        dim(state, $1, $3);
-        });
+        dim(state, $1, $3.map(function (v) { return v(state); }));
+    });
 }
 | STR_VARIABLE "(" num_exp_list ")"
 {
-}
-;
-
-num_array_var
-: NUM_VARIABLE "(" num_exp_list ")"
-{
-    $$ = bind_f(function(state) {
-        var indices = $3.map(function(num_exp) { return int(num_exp(state)); });
-        var v = $1;
-        var idx;
-        for (idx=0;idx<indices.length;idx++) {
-            v = v + "_" + indices[idx];
-        }
-        return v;
-        });
 }
 ;
 
@@ -419,7 +455,12 @@ function bind_f(f) {
 }
 
 function dim(state, v, index_list) {
-    console.log("dim: " + index_list);
+    console.log("dim: " + v + " " + index_list);
+    console.log(index_list);
+    var idx;
+    for (idx=0;idx<=index_list[0];idx++) {
+        state.vars[v + "_" + idx] = 0;
+    }
 }
 
 function int(v) {

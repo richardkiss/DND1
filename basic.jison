@@ -86,6 +86,12 @@ statement
             state.vars[$2(state)] = $4(state);
         });
 }
+| identifier EQ exp
+{
+    $$ = bind_f(function(state) {
+            state.vars[$1(state)] = $3(state);
+        });
+}
 | PRINT print_exp_list
 {
     $$ = bind_f(function(state) {
@@ -203,16 +209,6 @@ statement
     }
 }
 | BASE num_exp
-| NUM_VARIABLE EQ num_exp
-{ $$ = function(state) {
-    state.vars[$1] = $3(state);
-  }
-}
-| STR_VARIABLE EQ str_exp
-{ $$ = function(state) {
-    state.vars[$1] = $3(state);
-  };
-}
 ;
 
 
@@ -344,12 +340,12 @@ str_exp
 {
     $$ = bind_f(function(state) { return $1.substring(1, $1.length-1); });
 }
-| STR_VARIABLE
-{
-    $$ = bind_f(function(state) { return state.vars[$1]; })
-}
 | str_exp '+' str_exp
     { $$ = bind_f(function(state) { return $1(state) + $3(state); }); }
+| str_identifier
+{
+    $$ = bind_f(function(state) { return state.vars[$1(state)]; });
+}
 ;
 
 data_exp_list
@@ -421,11 +417,14 @@ dim_entry
 : NUM_VARIABLE "(" num_exp_list ")"
 {
     $$ = bind_f(function(state) {
-        dim(state, $1, $3.map(function (v) { return v(state); }));
+        dim(state, $1, $3.map(function (v) { return v(state); }), 0);
     });
 }
 | STR_VARIABLE "(" num_exp_list ")"
 {
+    $$ = bind_f(function(state) {
+        dim(state, $1, $3.map(function (v) { return v(state); }), "");
+    });
 }
 ;
 
@@ -454,17 +453,14 @@ function var_lookup(v, indices) {
     for (idx=0;idx<indices.length;idx++) {
         v = v + "_" + indices[idx];
     }
-    console.log(v);
     return v;
 }
 
-function dim(state, v, index_list) {
-    console.log("dim: " + v + " " + index_list);
-    console.log(index_list);
+function dim(state, v, index_list, init_val) {
     var il = index_list.map(function() { return 0; });
     var going = 1;
     while (going) {
-        state.vars[var_lookup(v, il)] = 0;
+        state.vars[var_lookup(v, il)] = init_val;
         var idx = 0;
         while (1) {
             il[idx] += 1;

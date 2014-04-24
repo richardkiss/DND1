@@ -27,11 +27,23 @@ var state = {
     goto: function(line_number) {
         this.line_index = this.line_lookup[line_number];
     },
+    read_data: function() {
+        return this.data.shift();
+    },
     load: function(program) {
         this.program = program;
         this.line_index = 0;
         this.line_lookup = {};
         var idx;
+        this.data = [];
+        for (idx=0;idx<program.length;idx++) {
+            var statement = program[idx];
+            if (statement.data) {
+                this.data = this.data.concat(statement.data);
+            }
+        }
+        console.log("DATA");
+        console.log(this.data);
         for (idx=0;idx<program.length;idx++) {
             var statement = program[idx];
             this.line_lookup[statement.line_number] = idx

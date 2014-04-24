@@ -74,9 +74,9 @@
 
 line
 : INTEGER REM
-{ return { line_number: Number($1), f: function() {}}; }
+{ return { line_number: Number($1), f: function() {}, data:[]}; }
 | INTEGER statement EOF
-{ return { line_number: Number($1), f: $2}; }
+{ return { line_number: Number($1), f: $2, data: $2.data }; }
 ;
 
 statement
@@ -179,6 +179,8 @@ statement
 | DATA data_exp_list
 {
     $$ = function(state) {};
+    $$.data = $2;
+    console.log($2);
 }
 | FILE "#" num_exp EQ str_exp
 {
@@ -192,9 +194,9 @@ statement
 {
     $$ = function(state) {};
 }
-| READ identifier_list
+| READ read_list
 {
-    $$ = function(state) {};
+    $$ = $2;
 }
 | READ "#" INTEGER "," identifier
 {
@@ -210,6 +212,23 @@ statement
 }
 | BASE num_exp
 ;
+
+read_list
+: identifier "," read_list
+{
+    $$ = bind_f(function(state) {
+            state.vars[$1(state)] = state.read_data();
+            $3(state);
+        });
+}
+| identifier
+{
+    $$ = bind_f(function(state) {
+            state.vars[$1(state)] = state.read_data();
+        });
+}
+;
+
 
 
 identifier
@@ -352,21 +371,21 @@ data_exp_list
 : data_exp
 { $$ = [$1]; }
 | data_exp "," data_exp_list
-{ $$ = $1.concat([$2]); }
+{ $$ = [$1].concat($3); }
 ;
 
 data_exp
 : STR_CONSTANT
 {
-    $$ = $1;
+    $$ = $1.substring(1, $1.length-1);
 }
 | INTEGER
 {
-    $$ = $1;
+    $$ = Number($1);
 }
 | REAL
 {
-    $$ = $1;
+    $$ = Number($1);
 }
 ;
 
@@ -379,8 +398,6 @@ num_array_var
     });
 }
 ;
-
-
 
 print_exp_list
 :

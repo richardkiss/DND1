@@ -379,12 +379,7 @@ num_array_var
 {
     $$ = bind_f(function(state) {
         var indices = $3.map(function(num_exp) { return int(num_exp(state)); });
-        var v = $1;
-        var idx;
-        for (idx=0;idx<indices.length;idx++) {
-            v = v + "_" + indices[idx];
-        }
-        return v;
+        return var_lookup($1, indices);
     });
 }
 ;
@@ -454,12 +449,34 @@ function bind_f(f) {
     return new_f;
 }
 
+function var_lookup(v, indices) {
+    var idx;
+    for (idx=0;idx<indices.length;idx++) {
+        v = v + "_" + indices[idx];
+    }
+    console.log(v);
+    return v;
+}
+
 function dim(state, v, index_list) {
     console.log("dim: " + v + " " + index_list);
     console.log(index_list);
-    var idx;
-    for (idx=0;idx<=index_list[0];idx++) {
-        state.vars[v + "_" + idx] = 0;
+    var il = index_list.map(function() { return 0; });
+    var going = 1;
+    while (going) {
+        state.vars[var_lookup(v, il)] = 0;
+        var idx = 0;
+        while (1) {
+            il[idx] += 1;
+            if (il[idx] <= index_list[idx]) {
+                break;
+            }
+            il[idx] = 0;
+            idx += 1;
+            if (idx >= il.length) {
+                return;
+            }
+        }
     }
 }
 

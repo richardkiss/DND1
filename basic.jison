@@ -141,7 +141,7 @@ statement
 }
 | DIM dim_exp
 {
-    $$ = function(state) { $2(state); };
+    $$ = $2;
 }
 | FOR NUM_VARIABLE EQ num_exp TO num_exp
 {
@@ -182,23 +182,34 @@ statement
     $$.data = $2;
     console.log($2);
 }
-| FILE "#" num_exp EQ str_exp
-{
-    $$ = function(state) {};
-}
-| WRITE "#" num_exp "," exp
-{
-    $$ = function(state) {};
-}
-| RESTORE "#" INTEGER
-{
-    $$ = function(state) {};
-}
 | READ read_list
 {
     $$ = $2;
 }
-| READ "#" INTEGER "," identifier
+| FILE "#" num_exp EQ str_exp
+{
+    $$ = bind_f(function(state) {
+        var number = $3(state);
+        var name = $5(state);
+        state.file_num(number, name);
+    });
+}
+| WRITE "#" num_exp "," exp_list
+{
+    $$ = bind_f(function(state) {
+        var number = $3(state);
+        var list = $5(state);
+        state.write_num(number, list);
+    });
+}
+| RESTORE "#" INTEGER
+{
+    $$ = bind_f(function(state) {
+        var N = $3(state);
+        state.files[N] = [];
+    });
+}
+| READ "#" INTEGER "," read_list
 {
     $$ = function(state) {};
 }
@@ -282,17 +293,6 @@ array_addendum
 }
 ;
 
-
-identifier_list
-: identifier
-{
-    $$ = [$1];
-}
-| identifier_list "," identifier
-{
-    $$ = $1.concat([$3])
-}
-;
 
 exp
 : num_exp
@@ -386,16 +386,6 @@ data_exp
 | REAL
 {
     $$ = Number($1);
-}
-;
-
-num_array_var
-: NUM_VARIABLE "(" num_exp_list ")"
-{
-    $$ = bind_f(function(state) {
-        var indices = $3.map(function(num_exp) { return int(num_exp(state)); });
-        return var_lookup($1, indices);
-    });
 }
 ;
 

@@ -21,7 +21,7 @@
 "!="                  return 'NE';
 "("                   return '(';
 ")"                   return ')';
-"#" return "#";
+"#" return "NUM";
 ";" return "SEMICOLON";
 "," return ",";
 \n return "NL";
@@ -184,9 +184,15 @@ statement
 }
 | READ read_list
 {
-    $$ = $2;
+    $$ = bind_f(function(state) {
+        var idx;
+        for (idx=0;idx<$2.length;idx++) {
+            var v = $2[idx](state);
+            state.vars[v] = state.read_data();
+        }
+    });
 }
-| FILE "#" num_exp EQ str_exp
+| FILE NUM num_exp EQ str_exp
 {
     $$ = bind_f(function(state) {
         var number = $3(state);
@@ -194,24 +200,32 @@ statement
         state.file_num(number, name);
     });
 }
-| WRITE "#" num_exp "," exp_list
+| WRITE NUM num_exp "," exp
 {
     $$ = bind_f(function(state) {
         var number = $3(state);
-        var list = $5(state);
+        var list = [$5(state)];
         state.write_num(number, list);
     });
 }
-| RESTORE "#" INTEGER
+| RESTORE NUM num_exp
 {
     $$ = bind_f(function(state) {
         var N = $3(state);
-        state.files[N] = [];
+        state.restore_num(N);
     });
 }
-| READ "#" INTEGER "," read_list
+| READ NUM INTEGER "," read_list
 {
-    $$ = function(state) {};
+    $$ = bind_f(function(state) {
+        var number = $3;
+        var idx;
+        for (idx=0;idx<$5.length;idx++) {
+            var v = $5[idx](state);
+            var val = state.read_num(number);
+            state.vars[v] = val;
+        }
+    });
 }
 | INPUT identifier
 {
@@ -227,20 +241,13 @@ statement
 read_list
 : identifier "," read_list
 {
-    $$ = bind_f(function(state) {
-            state.vars[$1(state)] = state.read_data();
-            $3(state);
-        });
+    $$ = [$1].concat($3);
 }
 | identifier
 {
-    $$ = bind_f(function(state) {
-            state.vars[$1(state)] = state.read_data();
-        });
+    $$ = [$1];
 }
 ;
-
-
 
 identifier
 : num_identifier
@@ -293,11 +300,6 @@ array_addendum
 }
 ;
 
-
-exp
-: num_exp
-| str_exp
-;
 
 num_exp
 : '-' num_exp
@@ -432,6 +434,28 @@ dim_entry
     $$ = bind_f(function(state) {
         dim(state, $1, $3.map(function (v) { return v(state); }), "");
     });
+}
+;
+
+exp_list
+: exp
+{
+    $$ = [$1];
+}
+| exp "," exp_list
+{
+    $$ = [$1].concat($3);
+}
+;
+
+exp
+: num_exp
+{
+    $$ = $1;
+}
+| str_exp
+{
+    $$ = $1;
 }
 ;
 

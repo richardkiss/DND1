@@ -3,6 +3,7 @@ var fs = require("fs");
 
 
 var source_path = "simple.basic";
+//source_path = "write.basic.txt";
 
 var prog_text = fs.readFileSync(source_path, encoding="utf8").split("\n");
 
@@ -18,17 +19,20 @@ function bind_f(f) {
 var state = {
     line_index: 0,
     running: 1,
-    vars: {}, // n_A for numerical, s_A for string, na_A for numerical array, sa_A for string array
+    vars: {},
     print: function(s) {
         console.log(s);
     },
     for_state: {},
+    files: {},
+    file_system: {},
     return_positions: [],
     goto: function(line_number) {
         this.line_index = this.line_lookup[line_number];
     },
     read_data: function() {
-        return this.data.shift();
+        var v = this.data.shift();
+        return v;
     },
     load: function(program) {
         this.program = program;
@@ -65,6 +69,32 @@ var state = {
         while (this.running) {
             this.step();
         }
+    },
+    file_num: function(number, name) {
+        var data = this.file_system[name];
+        if (data === undefined) {
+            data = [];
+            this.file_system[name] = data;
+        }
+        this.files[number] = { name: name, data: data };
+    },
+    read_num: function(number) {
+        var v = this.files[number].data.shift();
+        return v;
+    },
+    restore_num: function(number) {
+        console.log(this);
+        console.log(this.file_system[this.files[number].name].slice(0));
+        this.files[number].data = this.file_system[this.files[number].name].slice(0);
+        console.log(this);
+        console.log(this.files[number].data);
+    },
+    write_num: function(number, l) {
+        var idx;
+        for (idx=0;idx<l.length;idx++) {
+            this.files[number].data.push(l[idx]);
+        }
+        this.file_system[this.files[number].name] = this.files[number].data;
     }
 }
 

@@ -99,6 +99,9 @@ var state = {
                 this.vars[vars[idx](state)] = 100 + idx;
                 debugger;
             }
+            while (this.running) {
+                this.step();
+            }
         }
         this.running = false;
         setTimeout(resume.bind(this), 3.0);

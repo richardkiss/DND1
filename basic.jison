@@ -227,8 +227,11 @@ statement
         }
     });
 }
-| INPUT identifier
+| INPUT read_list
 {
+    $$ = bind_f(function(state) {
+        state.input($2);
+    });
 }
 | STOP
 { $$ = function(state) {

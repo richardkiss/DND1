@@ -46,8 +46,6 @@ var state = {
                 this.data = this.data.concat(statement.data);
             }
         }
-        console.log("DATA");
-        console.log(this.data);
         for (idx=0;idx<program.length;idx++) {
             var statement = program[idx];
             this.line_lookup[statement.line_number] = idx
@@ -83,11 +81,7 @@ var state = {
         return v;
     },
     restore_num: function(number) {
-        console.log(this);
-        console.log(this.file_system[this.files[number].name].slice(0));
         this.files[number].data = this.file_system[this.files[number].name].slice(0);
-        console.log(this);
-        console.log(this.files[number].data);
     },
     write_num: function(number, l) {
         var idx;
@@ -95,6 +89,19 @@ var state = {
             this.files[number].data.push(l[idx]);
         }
         this.file_system[this.files[number].name] = this.files[number].data;
+    },
+    input: function(vars) {
+        resume = function () {
+            // fetch values and stick 'em in the vars
+            var idx;
+            this.running = true;
+            for (idx=0;idx<vars.length;idx++) {
+                this.vars[vars[idx](state)] = 100 + idx;
+                debugger;
+            }
+        }
+        this.running = false;
+        setTimeout(resume.bind(this), 3.0);
     }
 }
 

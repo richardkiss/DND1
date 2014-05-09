@@ -1,13 +1,31 @@
 
 var PARSE_LINE = basic.parse.bind(basic);
-console.log(PARSE_LINE);
-var p = PARSE_LINE("10 PRINT 200 + 300");
-console.log(p);
+
+state.print = function(s) {
+    $("#output").append(s);
+}
+
+state.input = function(vars) {
+    resume = function () {
+        var val = $("#input").val();
+        var vals = val.split(",");
+        debugger;
+        var idx;
+        for (idx=0;idx<vars.length;idx++) {
+            this.vars[vars[idx](state)] = vals[idx];
+        }
+        this.running = true;
+        while (this.running) {
+            this.step();
+        }
+    }
+    this.running = false;
+    $("#return").one("click", resume.bind(this));
+}
 
 
 $(function (){
-    console.log("hello");
-    $.get("simple.basic")
+    $.get("dnd.basic")
     .done(start);
 });
 

@@ -403,7 +403,7 @@ print_exp_list
 {
     $$ = [$1];
 }
-| print_exp_list SEMICOLON print_exp
+| print_exp SEMICOLON print_exp_list
 {
     $$ = [$1].concat($3);
 }

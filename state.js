@@ -2,9 +2,6 @@ var state = {
     line_index: 0,
     running: 1,
     vars: {},
-    print: function(s) {
-        console.log(s);
-    },
     for_state: {},
     files: {},
     file_system: {},
@@ -71,6 +68,9 @@ var state = {
             this.files[number].data.push(l[idx]);
         }
         this.file_system[this.files[number].name] = this.files[number].data;
+    },
+    print: function(s) {
+        console.log(s);
     },
     input: function(vars) {
         resume = function () {

@@ -6,7 +6,7 @@
 %%
 \"[^\"]*\"            return "STR_CONSTANT";
 \s+                   /* skip whitespace */
-[0-9]+("."[0-9]+)     return 'REAL';
+[0-9]*("."[0-9]+)     return 'REAL';
 [0-9]+                return 'INTEGER';
 "*"                   return '*';
 "/"                   return '/';
@@ -29,8 +29,11 @@
 "IF" return "IF";
 "THEN" return "THEN";
 "GOTO" return "GOTO";
+"GO" return "GO";
+"TO" return "TO";
 "PRINT" return "PRINT";
 "STOP" return "STOP";
+"END" return "END";
 "LET" return "LET";
 "BASE" return "BASE";
 "DIM" return "DIM";
@@ -45,12 +48,15 @@
 "WRITE" return "WRITE";
 "RESTORE" return "RESTORE";
 "REM" return "REM";
+"OR" return "OR";
+"AND" return "AND";
 "ASSERT" return "ASSERT";
-
 
 "INT" return "INT";
 "RND" return "RND";
+"ABS" return "ABS";
 "CLK" return "CLK";
+"SQR" return "SQR";
 
 "TO" return "TO";
 
@@ -62,6 +68,7 @@
 
 /* operator associations and precedence */
 
+%left 'OR' 'AND'
 %left '+' '-'
 %left '*' '/'
 %left '^'
@@ -133,10 +140,24 @@ statement
         }
     });
 }
+| IF num_exp GO TO INTEGER
+{
+    $$ = bind_f(function(state) {
+        if ($2(state)) {
+            state.goto($5);
+        }
+    });
+}
 | GOTO INTEGER
 {
     $$ = bind_f(function(state) {
         state.goto($2);
+    });
+}
+| GO TO INTEGER
+{
+    $$ = bind_f(function(state) {
+        state.goto($3);
     });
 }
 | DIM dim_exp
@@ -215,10 +236,10 @@ statement
         state.restore_num(N);
     });
 }
-| READ NUM INTEGER "," read_list
+| READ NUM num_exp "," read_list
 {
     $$ = bind_f(function(state) {
-        var number = $3;
+        var number = $3(state);
         var idx;
         for (idx=0;idx<$5.length;idx++) {
             var v = $5[idx](state);
@@ -234,6 +255,11 @@ statement
     });
 }
 | STOP
+{ $$ = function(state) {
+        state.running = 0;
+    }
+}
+| END
 { $$ = function(state) {
         state.running = 0;
     }
@@ -306,7 +332,7 @@ array_addendum
 
 num_exp
 : '-' num_exp
-    { $$ = bind_f(function(state) { return -$1(state)}); }
+    { $$ = bind_f(function(state) { return -$2(state)}); }
 | num_exp '+' num_exp
     { $$ = bind_f(function(state) { return $1(state) + $3(state); }); }
 | num_exp '-' num_exp
@@ -327,6 +353,10 @@ num_exp
     { $$ = bind_f(function(state) { return $1(state) < $3(state); }); }
 | num_exp NE num_exp
     { $$ = bind_f(function(state) { return $1(state) != $3(state); }); }
+| num_exp OR num_exp
+    { $$ = bind_f(function(state) { return $1(state) || $3(state); }); }
+| num_exp AND num_exp
+    { $$ = bind_f(function(state) { return $1(state) && $3(state); }); }
 | str_exp EQ str_exp
     { $$ = bind_f(function(state) { return $1(state) == $3(state); }); }
 | str_exp LE str_exp
@@ -345,6 +375,10 @@ num_exp
     { $$ = bind_f(function(state) { return int($3(state)); })}
 | RND '(' num_exp ')'
     { $$ = bind_f(function(state) { return rnd($3(state)); })}
+| SQR '(' num_exp ')'
+    { $$ = bind_f(function(state) { return Math.sqrt($3(state)); })}
+| ABS '(' num_exp ')'
+    { $$ = bind_f(function(state) { return Math.abs($3(state)); })}
 | CLK '(' num_exp ')'
     { $$ = bind_f(function(state) { return clk($3(state)); })}
 | num_identifier
@@ -404,6 +438,10 @@ print_exp_list
     $$ = [$1];
 }
 | print_exp SEMICOLON print_exp_list
+{
+    $$ = [$1].concat($3);
+}
+| print_exp "," print_exp_list
 {
     $$ = [$1].concat($3);
 }

@@ -188,7 +188,7 @@ statement
 {
     $$ = bind_f(function(state) {
            state.return_positions.push(state.line_index);
-           state.line_index = state.line_lookup[$2];
+           state.line_index = state.line_lookup[Number($2)];
         })
 }
 | RETURN
@@ -265,6 +265,9 @@ statement
     }
 }
 | BASE num_exp
+{
+    $$ = function() {}
+}
 ;
 
 read_list

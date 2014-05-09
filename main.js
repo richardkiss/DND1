@@ -9,7 +9,6 @@ state.input = function(vars) {
     resume = function () {
         var val = $("#input").val();
         var vals = val.split(",");
-        debugger;
         var idx;
         for (idx=0;idx<vars.length;idx++) {
             this.vars[vars[idx](state)] = vals[idx];

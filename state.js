@@ -7,7 +7,7 @@ var state = {
     file_system: {},
     return_positions: [],
     goto: function(line_number) {
-        this.line_index = this.line_lookup[line_number];
+        this.line_index = this.line_lookup[Number(line_number)];
     },
     read_data: function() {
         var v = this.data.shift();
@@ -31,11 +31,12 @@ var state = {
         }
     },
     step: function() {
+        console.log("trace line " + this.program[this.line_index].line_number)
         if (this.program.length <= state.line_index) {
             this.running = 0;
             return;
         }
-        statement = this.program[this.line_index];
+        var statement = this.program[this.line_index];
         this.line_index++;
         statement.f(this);
     },
@@ -79,7 +80,6 @@ var state = {
             this.running = true;
             for (idx=0;idx<vars.length;idx++) {
                 this.vars[vars[idx](state)] = 100 + idx;
-                debugger;
             }
             while (this.running) {
                 this.step();

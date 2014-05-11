@@ -68,11 +68,11 @@
 
 /* operator associations and precedence */
 
+%left GT GE LT LE EQ NE
 %left 'OR' 'AND'
 %left '+' '-'
 %left '*' '/'
 %left '^'
-%left GT GE LT LE EQ NE
 %left UMINUS
 
 %start line

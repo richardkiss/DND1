@@ -30,9 +30,6 @@ $(function (){
 
 
 function start(t) {
-    console.log(t);
-    $("#output").append("foo!");
-
     function bind_f(f) {
         var new_f = function (state) {
             return f(state);

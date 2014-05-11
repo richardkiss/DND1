@@ -84,6 +84,8 @@ line
 { return { line_number: Number($1), f: function() {}, data:[]}; }
 | INTEGER statement EOF
 { return { line_number: Number($1), f: $2, data: $2.data }; }
+| EOF
+{ return { f: function() {} }; }
 ;
 
 statement
@@ -213,13 +215,9 @@ statement
         }
     });
 }
-| FILE NUM num_exp EQ str_exp
+| FILE file_assign_list
 {
-    $$ = bind_f(function(state) {
-        var number = $3(state);
-        var name = $5(state);
-        state.file_num(number, name);
-    });
+    $$ = $2;
 }
 | WRITE NUM num_exp "," exp
 {
@@ -267,6 +265,26 @@ statement
 | BASE num_exp
 {
     $$ = function() {}
+}
+;
+
+file_assign_list
+: NUM num_exp EQ str_exp
+{
+    $$ = bind_f(function(state) {
+        var number = $2(state);
+        var name = $4(state);
+        state.file_num(number, name);
+    });
+}
+| NUM num_exp EQ str_exp "," file_assign_list
+{
+    $$ = bind_f(function(state) {
+        var number = $2(state);
+        var name = $4(state);
+        state.file_num(number, name);
+        $6(state);
+    });
 }
 ;
 
@@ -556,7 +574,7 @@ function int(v) {
 }
 
 function rnd(v) {
-    return 0.5;
+    return Math.random();
 }
 
 function clk(v) {

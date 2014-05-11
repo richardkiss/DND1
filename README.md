@@ -5,4 +5,4 @@ This entry is JavaScript and runs in a browser. Rather than port a bunch of BASI
 to write a simple BASIC interpreter in JavaScript using jison. It's not very fast, efficient, and
 is missing a lot of error-checking, but it seems to work.
 
-Demo URL forthcoming.
+Demo at http://richardkiss.github.io/DND1/.
